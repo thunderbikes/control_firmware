@@ -31,6 +31,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define STARTUP		0
+#define OPERATION	1
+#define	CHARGING	2
+#define ERROR		3
 
 /* USER CODE END PD */
 
@@ -56,6 +60,85 @@ static void MX_ADC1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void error_handler(void){
+	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_RESET);
+	// should also close all relays
+	// comms over canbus of what the error was?
+	while(1){ //freeze everything off
+		HAL_Delay(500);
+	}
+}
+
+void discharge_handler(void){
+	/*
+	 Insert code for toggling relays and checking that aux opened
+	*/
+
+	// actually discharge the board
+	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_RESET);
+	int i = 0;
+	while (i < 5){ // replace w/ vsense code (break? on undervoltage)
+		i++;
+		HAL_Delay(500);
+	}
+	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_SET);
+
+	// LED demo code
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
+
+}
+
+void toggle_precharge(void){
+	/*
+	 Insert code for toggling relays and checking that aux closed
+	*/
+
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
+	int i = 0;
+	while (i < 5){ // replace w/ vsense code (break? on undervoltage)
+		i++;
+		HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
+		HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
+		HAL_Delay(500);
+	}
+
+	// LED demo code
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+}
+
+void toggle_charging(void){
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_SET);
+}
+
+void untoggle_charging(void){
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+}
+
+uint8_t get_switch_status(uint8_t){
+	if (HAL_GPIO_ReadPin(IGNITION_SW_GPIO_Port, IGNITION_SW_Pin) == GPIO_PIN_SET){
+		if (HAL_GPIO_ReadPin(CHARGE_SW_GPIO_Port, CHARGE_SW_Pin) == GPIO_PIN_SET){
+			return ERROR;
+		} else {
+			return OPERATION;
+		}
+	} else {
+		if (HAL_GPIO_ReadPin(CHARGE_SW_GPIO_Port, CHARGE_SW_Pin) == GPIO_PIN_SET){
+
+		} else {
+			return STARTUP;
+		}
+	}
+	return ERROR;
+}
+
+void aux_check(uint8_t){
+	HAL_Delay(500);
+	//placeholder
+}
+
+
 
 /* USER CODE END 0 */
 
@@ -90,24 +173,57 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+
+  // Setup
+  uint8_t status = STARTUP;
+  uint8_t new_status;
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_SET);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  new_status = get_switch_status(status);
+	  if (new_status == ERROR){
+		  error_handler();
+	  }
+
+	  if(new_status != status){
+		  if (status == STARTUP){ // where can you go from startup:
+			  if (new_status == OPERATION){
+				  toggle_precharge();
+				  status = OPERATION;
+			  } else if (new_status == OPERATION){
+				  toggle_charging();
+				  status = CHARGING;
+			  } else {
+				  error_handler(); // should never reach here
+			  }
+		  }
+		  if (status == OPERATION){ // where can you go from operation:
+			  if (new_status == STARTUP){
+				  discharge_handler();
+				  status = STARTUP;
+			  } else {
+				  error_handler(); // should never reach here
+			  }
+		  }
+		  if (status == CHARGING){ // where can you go from operation:
+			  if (new_status == STARTUP){
+				  untoggle_charging();
+				  status = STARTUP;
+			  } else {
+				  error_handler(); // should never reach here
+			  }
+		  }
+	  }
+
+	  aux_check(status);
     /* USER CODE END WHILE */
-	  if(HAL_GPIO_ReadPin(IGNITION_SW_GPIO_Port, IGNITION_SW_Pin) == GPIO_PIN_SET){
-		  HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin,GPIO_PIN_SET);
-	  } else {
-		  HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin,GPIO_PIN_RESET);
-	  }
-	  if(HAL_GPIO_ReadPin(CHARGE_SW_GPIO_Port, CHARGE_SW_Pin) == GPIO_PIN_SET){
-		  HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin,GPIO_PIN_SET);
-	  } else {
-		  HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin,GPIO_PIN_RESET);
-	  }
-	  HAL_Delay(500);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

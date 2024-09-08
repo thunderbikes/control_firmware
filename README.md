@@ -4,4 +4,4 @@ new crack at control firmware
 
 ## What's Implemented?
 
-Using debug LEDs to read the status of the switches. DEBUG1 shows the status of the ignition switch, while DEBUG2 shows the status of the charge switch.
+LED representation of states. Op -> DEBUG1 on, Chrg -> DEBUG2 on, discharge ->  timed MCU_OK off like final version & turn off, precharge -> blinking, error -> all lights off plus MCU off
