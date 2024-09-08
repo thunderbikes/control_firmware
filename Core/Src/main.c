@@ -108,8 +108,9 @@ int main(void)
 		  HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin,GPIO_PIN_RESET);
 	  }
 	  HAL_Delay(500);
-     /* USER CODE END WHILE */
-     /* USER CODE BEGIN 3 */
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -220,7 +221,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, HVCN_EN_Pin|HVCP_EN_Pin|CHRGP_EN_Pin|CHRGN_EN_Pin
-                          |PRECHRG_EN_Pin|PUMP_EN_Pin, GPIO_PIN_RESET);
+                          |PUMP_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, DEBUG1_Pin|DEBUG2_Pin, GPIO_PIN_RESET);
@@ -229,9 +230,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : HVCN_EN_Pin HVCP_EN_Pin CHRGP_EN_Pin CHRGN_EN_Pin
-                           PRECHRG_EN_Pin PUMP_EN_Pin */
+                           PUMP_EN_Pin */
   GPIO_InitStruct.Pin = HVCN_EN_Pin|HVCP_EN_Pin|CHRGP_EN_Pin|CHRGN_EN_Pin
-                          |PRECHRG_EN_Pin|PUMP_EN_Pin;
+                          |PUMP_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -243,17 +244,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : IGNITION_SW_Pin SAFETY_LOOP_STATUS_Pin */
-  GPIO_InitStruct.Pin = IGNITION_SW_Pin|SAFETY_LOOP_STATUS_Pin;
+  /*Configure GPIO pin : IGNITION_SW_Pin */
+  GPIO_InitStruct.Pin = IGNITION_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(IGNITION_SW_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : CHARGE_SW_Pin HVCP_AUX_Pin HVCN_AUX_Pin PRECHRG_AUX_Pin */
-  GPIO_InitStruct.Pin = CHARGE_SW_Pin|HVCP_AUX_Pin|HVCN_AUX_Pin|PRECHRG_AUX_Pin;
+  /*Configure GPIO pin : CHARGE_SW_Pin */
+  GPIO_InitStruct.Pin = CHARGE_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(CHARGE_SW_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DEBUG1_Pin DEBUG2_Pin */
   GPIO_InitStruct.Pin = DEBUG1_Pin|DEBUG2_Pin;
@@ -262,12 +263,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : SAFETY_LOOP_STATUS_Pin */
+  GPIO_InitStruct.Pin = SAFETY_LOOP_STATUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SAFETY_LOOP_STATUS_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : MCU_OK_Pin */
   GPIO_InitStruct.Pin = MCU_OK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(MCU_OK_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : HVCP_AUX_Pin HVCN_AUX_Pin PRECHRG_AUX_Pin */
+  GPIO_InitStruct.Pin = HVCP_AUX_Pin|HVCN_AUX_Pin|PRECHRG_AUX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

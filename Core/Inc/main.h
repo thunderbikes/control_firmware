@@ -73,8 +73,6 @@ void Error_Handler(void);
 #define BMS_GPIO2_GPIO_Port GPIOA
 #define BMS_GPIO3_Pin GPIO_PIN_3
 #define BMS_GPIO3_GPIO_Port GPIOA
-#define PRECHRG_EN_Pin GPIO_PIN_4
-#define PRECHRG_EN_GPIO_Port GPIOC
 #define IGNITION_SW_Pin GPIO_PIN_5
 #define IGNITION_SW_GPIO_Port GPIOC
 #define CHARGE_SW_Pin GPIO_PIN_0
