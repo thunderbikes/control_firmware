@@ -71,8 +71,12 @@ void error_handler(void){
 }
 
 void discharge_handler(void){
+	// turn off both contactors
+	HAL_GPIO_WritePin(HVCP_EN_GPIO_Port, HVCP_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(HVCN_EN_GPIO_Port, HVCN_EN_Pin, GPIO_PIN_RESET);
+
 	/*
-	 Insert code for toggling relays and checking that aux opened
+	 Insert code for checking that aux opened
 	*/
 
 	// actually discharge the board
@@ -84,36 +88,42 @@ void discharge_handler(void){
 	}
 	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_SET);
 
-	// LED demo code
-	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
-
 }
 
 void toggle_precharge(void){
+	// Maybe check that HVCP is open?
+
+	HAL_GPIO_WritePin(HVCN_EN_GPIO_Port, HVCN_EN_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(PRECHRG_EN_GPIO_Port, PRECHRG_EN_Pin, GPIO_PIN_SET);
 	/*
-	 Insert code for toggling relays and checking that aux closed
+	 Insert code for checking that "precharge mode" auxs closed
 	*/
 
-	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
+
 	int i = 0;
 	while (i < 5){ // replace w/ vsense code (break? on undervoltage)
 		i++;
-		HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
-		HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
 		HAL_Delay(500);
+		if (i == 4){
+			HAL_GPIO_WritePin(HVCP_EN_GPIO_Port, HVCP_EN_Pin, GPIO_PIN_SET);
+			HAL_Delay(500);
+			// check aux closed...
+			HAL_GPIO_WritePin(PRECHRG_EN_GPIO_Port, PRECHRG_EN_Pin, GPIO_PIN_RESET);
+			return;
+		}
 	}
-
-	// LED demo code
-	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+	// will only reach here if vsense fails after tries above
+	error_handler();
 }
 
 void toggle_charging(void){
-	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CHRGP_EN_GPIO_Port, CHRGP_EN_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CHRGN_EN_GPIO_Port, CHRGN_EN_Pin, GPIO_PIN_SET);
 }
 
 void untoggle_charging(void){
-	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(CHRGP_EN_GPIO_Port, CHRGP_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(CHRGN_EN_GPIO_Port, CHRGN_EN_Pin, GPIO_PIN_RESET);
 }
 
 uint8_t get_switch_status(uint8_t){
