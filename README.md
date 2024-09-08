@@ -4,4 +4,4 @@ new crack at control firmware
 
 ## What's Implemented?
 
-Implemented (most of) the pinout. Test everything builds with blinky on debug1 and 2 (alternating).
+Using debug LEDs to read the status of the switches. DEBUG1 shows the status of the ignition switch, while DEBUG2 shows the status of the charge switch.

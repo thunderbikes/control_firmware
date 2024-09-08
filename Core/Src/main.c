@@ -90,7 +90,6 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -98,8 +97,16 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
-	  HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
+	  if(HAL_GPIO_ReadPin(IGNITION_SW_GPIO_Port, IGNITION_SW_Pin) == GPIO_PIN_SET){
+		  HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin,GPIO_PIN_SET);
+	  } else {
+		  HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin,GPIO_PIN_RESET);
+	  }
+	  if(HAL_GPIO_ReadPin(CHARGE_SW_GPIO_Port, CHARGE_SW_Pin) == GPIO_PIN_SET){
+		  HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin,GPIO_PIN_SET);
+	  } else {
+		  HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin,GPIO_PIN_RESET);
+	  }
 	  HAL_Delay(500);
     /* USER CODE BEGIN 3 */
   }
