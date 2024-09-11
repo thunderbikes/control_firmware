@@ -96,6 +96,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
    
 	  if(HAL_GPIO_ReadPin(IGNITION_SW_GPIO_Port, IGNITION_SW_Pin) == GPIO_PIN_SET){
 		  HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin,GPIO_PIN_SET);
@@ -108,6 +109,7 @@ int main(void)
 		  HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin,GPIO_PIN_RESET);
 	  }
 	  HAL_Delay(500);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
