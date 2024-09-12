@@ -31,6 +31,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// using constants to represent state as int
+#define STARTUP		0
+#define OPERATION	1
+#define	CHARGING	2
+#define ERROR		3
 
 /* USER CODE END PD */
 
@@ -56,6 +61,92 @@ static void MX_ADC1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void error_handler(void){
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_RESET);
+	// should also close all relays
+	// comms over canbus of what the error was?
+	while(1){ //freeze everything off
+		HAL_Delay(500);
+	}
+	return;
+}
+
+void discharge_handler(void){
+	/*
+	 Insert code for toggling relays and checking that aux opened
+	*/
+
+	// actually discharge the board
+	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_RESET);
+	int i = 0;
+	while (i < 5){ // replace w/ vsense code (break? on undervoltage)
+		i++;
+		HAL_Delay(500);
+	}
+	HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_SET);
+
+	// LED demo code
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
+	return;
+}
+
+void toggle_precharge(void){
+	/*
+	 Insert code for toggling relays and checking that aux closed
+	*/
+
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
+	int i = 0;
+	while (i < 5){ // replace w/ vsense code (break? on undervoltage)
+		i++;
+		HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
+		HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
+		HAL_Delay(500);
+	}
+
+	// LED demo code
+	HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+	return;
+}
+
+void toggle_charging(void){
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_SET);
+	return;
+}
+
+void untoggle_charging(void){
+	HAL_GPIO_WritePin(DEBUG2_GPIO_Port, DEBUG2_Pin, GPIO_PIN_RESET);
+	return;
+}
+
+uint8_t get_switch_status(void){
+	if (HAL_GPIO_ReadPin(IGNITION_SW_GPIO_Port, IGNITION_SW_Pin) == GPIO_PIN_SET){
+		if (HAL_GPIO_ReadPin(CHARGE_SW_GPIO_Port, CHARGE_SW_Pin) == GPIO_PIN_SET){
+			return ERROR;
+		} else {
+			return OPERATION;
+		}
+	} else {
+		if (HAL_GPIO_ReadPin(CHARGE_SW_GPIO_Port, CHARGE_SW_Pin) == GPIO_PIN_SET){
+			return CHARGING;
+		} else {
+			return STARTUP;
+		}
+	}
+	return ERROR;
+}
+
+void aux_check(uint8_t){
+	HAL_Delay(500);
+	return;
+	//placeholder
+}
+
+
 
 /* USER CODE END 0 */
 
@@ -90,17 +181,58 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
+
+  // Setup
+  uint8_t status = STARTUP;
+  uint8_t new_status;
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(MCU_OK_GPIO_Port, MCU_OK_Pin, GPIO_PIN_SET);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  new_status = get_switch_status();
+	  if (new_status == ERROR){
+		  error_handler();
+	  }
+
+	  if(new_status != status){ // handles change of switch state
+		  if (status == STARTUP){ // where can you go from startup:
+			  if (new_status == OPERATION){
+				  toggle_precharge();
+				  status = OPERATION;
+			  } else if (new_status == CHARGING){
+				  toggle_charging();
+				  status = CHARGING;
+			  } else {
+				  error_handler(); // should never reach here
+			  }
+		  } else if (status == OPERATION){ // where can you go from operation:
+			  if (new_status == STARTUP){
+				  discharge_handler();
+				  status = STARTUP;
+			  } else {
+				  error_handler(); // should never reach here
+			  }
+		  } else if (status == CHARGING){ // where can you go from operation:
+			  if (new_status == STARTUP){
+				  untoggle_charging();
+				  status = STARTUP;
+			  } else {
+				  error_handler(); // should never reach here
+			  }
+		  } else {
+			  status = ERROR;
+			  error_handler();
+		  }
+	  }
+
+	  aux_check(status); // to be implemented
     /* USER CODE END WHILE */
-	  HAL_GPIO_TogglePin(DEBUG1_GPIO_Port, DEBUG1_Pin);
-	  HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
-	  HAL_Delay(500);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -235,17 +367,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : IGNITION_SW_Pin SAFETY_LOOP_STATUS_Pin */
-  GPIO_InitStruct.Pin = IGNITION_SW_Pin|SAFETY_LOOP_STATUS_Pin;
+  /*Configure GPIO pin : IGNITION_SW_Pin */
+  GPIO_InitStruct.Pin = IGNITION_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(IGNITION_SW_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : CHARGE_SW_Pin HVCP_AUX_Pin HVCN_AUX_Pin PRECHRG_AUX_Pin */
-  GPIO_InitStruct.Pin = CHARGE_SW_Pin|HVCP_AUX_Pin|HVCN_AUX_Pin|PRECHRG_AUX_Pin;
+  /*Configure GPIO pin : CHARGE_SW_Pin */
+  GPIO_InitStruct.Pin = CHARGE_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(CHARGE_SW_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DEBUG1_Pin DEBUG2_Pin */
   GPIO_InitStruct.Pin = DEBUG1_Pin|DEBUG2_Pin;
@@ -254,12 +386,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : SAFETY_LOOP_STATUS_Pin */
+  GPIO_InitStruct.Pin = SAFETY_LOOP_STATUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SAFETY_LOOP_STATUS_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : MCU_OK_Pin */
   GPIO_InitStruct.Pin = MCU_OK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(MCU_OK_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : HVCP_AUX_Pin HVCN_AUX_Pin PRECHRG_AUX_Pin */
+  GPIO_InitStruct.Pin = HVCP_AUX_Pin|HVCN_AUX_Pin|PRECHRG_AUX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

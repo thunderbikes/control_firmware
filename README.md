@@ -4,4 +4,4 @@ new crack at control firmware
 
 ## What's Implemented?
 
-Implemented (most of) the pinout. Test everything builds with blinky on debug1 and 2 (alternating).
+LED representation of states. Op -> DEBUG1 on, Chrg -> DEBUG2 on, discharge ->  timed MCU_OK off like final version & turn off, precharge -> blinking, error -> all lights off plus MCU off
