@@ -31,6 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// using constants to represent state as int
 #define STARTUP		0
 #define OPERATION	1
 #define	CHARGING	2
@@ -198,7 +199,7 @@ int main(void)
 		  error_handler();
 	  }
 
-	  if(new_status != status){
+	  if(new_status != status){ // handles change of switch state
 		  if (status == STARTUP){ // where can you go from startup:
 			  if (new_status == OPERATION){
 				  toggle_precharge();
@@ -229,7 +230,7 @@ int main(void)
 		  }
 	  }
 
-	  aux_check(status);
+	  aux_check(status); // to be implemented
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
